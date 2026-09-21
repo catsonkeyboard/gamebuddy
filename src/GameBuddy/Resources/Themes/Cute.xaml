@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- 可爱卡通：糖果色浅色主题，大圆角柔和阴影 -->
+    <SolidColorBrush x:Key="Theme.WindowBackgroundBrush" Color="#FFFFF4FA"/>
+    <SolidColorBrush x:Key="Theme.SidebarBrush" Color="#FFFFE9F4"/>
+    <SolidColorBrush x:Key="Theme.TopBarBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Theme.SurfaceBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Theme.CardBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Theme.CardHoverBrush" Color="#FFFFF0F7"/>
+    <SolidColorBrush x:Key="Theme.BorderBrush" Color="#FFFBDCEC"/>
+    <SolidColorBrush x:Key="Theme.DividerBrush" Color="#FFF7E4F1"/>
+    <SolidColorBrush x:Key="Theme.SelectionBrush" Color="#FFFFD9EC"/>
+
+    <SolidColorBrush x:Key="Theme.AccentBrush" Color="#FFFF8FC7"/>
+    <SolidColorBrush x:Key="Theme.AccentHoverBrush" Color="#FFFFA8D6"/>
+    <SolidColorBrush x:Key="Theme.AccentTextBrush" Color="#FF4A2B3C"/>
+
+    <SolidColorBrush x:Key="Theme.TextPrimaryBrush" Color="#FF4A3B52"/>
+    <SolidColorBrush x:Key="Theme.TextSecondaryBrush" Color="#FF7A6A85"/>
+    <SolidColorBrush x:Key="Theme.TextMutedBrush" Color="#FFA79AB0"/>
+
+    <SolidColorBrush x:Key="Theme.SuccessBrush" Color="#FF5CC98A"/>
+    <SolidColorBrush x:Key="Theme.WarningBrush" Color="#FFFFC24B"/>
+    <SolidColorBrush x:Key="Theme.DangerBrush" Color="#FFFA7B8E"/>
+    <SolidColorBrush x:Key="Theme.GlowBrush" Color="#33FF8FC7"/>
+    <SolidColorBrush x:Key="Theme.PlaceholderBrush" Color="#FFF3D9E9"/>
+
+    <CornerRadius x:Key="Theme.CardCornerRadius">18</CornerRadius>
+    <CornerRadius x:Key="Theme.ButtonCornerRadius">14</CornerRadius>
+    <CornerRadius x:Key="Theme.PosterCornerRadius">14</CornerRadius>
+    <CornerRadius x:Key="Theme.ControlCornerRadius">12</CornerRadius>
+
+    <FontFamily x:Key="Theme.BaseFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+    <FontFamily x:Key="Theme.TitleFontFamily">Segoe UI Semibold, Microsoft YaHei UI</FontFamily>
+
+    <Thickness x:Key="Theme.CardBorderThickness">1</Thickness>
+    <Thickness x:Key="Theme.CardPadding">12</Thickness>
+
+    <DropShadowEffect x:Key="Theme.CardEffect" BlurRadius="16" ShadowDepth="2" Opacity="0.18" Color="#FFFF8FC7"/>
+    <DropShadowEffect x:Key="Theme.PanelEffect" BlurRadius="26" ShadowDepth="0" Opacity="0.22" Color="#FFB98BD6"/>
+
+</ResourceDictionary>

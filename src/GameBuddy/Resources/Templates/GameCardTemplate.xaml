@@ -1,0 +1,105 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:GameBuddy.ViewModels"
+                    xmlns:conv="clr-namespace:GameBuddy.Converters">
+
+    <conv:NullToVisibilityConverter x:Key="HasValue"/>
+    <conv:NullToVisibilityConverter x:Key="HasNoValue" Invert="True"/>
+    <conv:BoolToVisibilityConverter x:Key="TrueVisible"/>
+    <conv:BoolToVisibilityConverter x:Key="TrueCollapsed" Invert="True"/>
+
+    <!-- 游戏卡片：竖版海报 + 标题 + 游玩统计 -->
+    <DataTemplate x:Key="GameCardTemplate" DataType="{x:Type vm:GameItemViewModel}">
+        <Border x:Name="CardRoot"
+                Width="190" Margin="8"
+                Background="{DynamicResource Theme.CardBrush}"
+                BorderBrush="{DynamicResource Theme.BorderBrush}"
+                BorderThickness="{DynamicResource Theme.CardBorderThickness}"
+                CornerRadius="{DynamicResource Theme.CardCornerRadius}"
+                Effect="{DynamicResource Theme.CardEffect}"
+                SnapsToDevicePixels="True"
+                Cursor="Hand">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="266"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 海报 -->
+                <Border Grid.Row="0"
+                        Margin="{DynamicResource Theme.CardPadding}"
+                        CornerRadius="{DynamicResource Theme.PosterCornerRadius}"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Border Background="{DynamicResource Theme.PlaceholderBrush}"/>
+                        <Image Source="{Binding PosterPath}"
+                               Stretch="UniformToFill"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Visibility="{Binding HasPoster, Converter={StaticResource TrueVisible}}"/>
+                        <Border Background="{DynamicResource Theme.PlaceholderBrush}"
+                                Visibility="{Binding HasPoster, Converter={StaticResource TrueCollapsed}}"/>
+                        <TextBlock Text="{Binding Title}"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   TextAlignment="Center" TextWrapping="Wrap"
+                                   Margin="16" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Visibility="{Binding HasPoster, Converter={StaticResource TrueCollapsed}}"/>
+
+                        <!-- 正在游玩角标 -->
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="6"
+                                Background="{DynamicResource Theme.SuccessBrush}"
+                                CornerRadius="{DynamicResource Theme.ControlCornerRadius}"
+                                Padding="7,3"
+                                Visibility="{Binding IsPlaying, Converter={StaticResource TrueVisible}}">
+                            <TextBlock Text="{Binding CurrentSessionText, StringFormat='▶ {0}'}"
+                                       FontSize="11" FontWeight="Bold"
+                                       Foreground="{DynamicResource Theme.WindowBackgroundBrush}"/>
+                        </Border>
+
+                        <!-- 悬停出现的启动按钮 -->
+                        <Button x:Name="PlayButton"
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                Margin="8" Width="42" Height="42"
+                                Opacity="0"
+                                Style="{StaticResource PrimaryButton}"
+                                Content="▶" FontSize="16"
+                                ToolTip="启动游戏"
+                                Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}"/>
+                    </Grid>
+                </Border>
+
+                <TextBlock Grid.Row="1" Margin="12,4,12,2"
+                           Text="{Binding Title}"
+                           FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource Theme.TextPrimaryBrush}"
+                           ToolTip="{Binding Title}"/>
+
+                <Grid Grid.Row="2" Margin="12,0,12,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding SourceEmoji}" FontSize="11" Margin="0,0,5,0"
+                                   Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                        <TextBlock Text="{Binding TotalPlayTimeText}" FontSize="11"
+                                   Foreground="{DynamicResource Theme.TextSecondaryBrush}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="⭐" FontSize="11"
+                               Foreground="{DynamicResource Theme.WarningBrush}"
+                               Visibility="{Binding Game.IsFavorite, Converter={StaticResource TrueVisible}}"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <DataTemplate.Triggers>
+            <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
+                <Setter TargetName="PlayButton" Property="Opacity" Value="1"/>
+                <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource Theme.CardHoverBrush}"/>
+            </Trigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+</ResourceDictionary>

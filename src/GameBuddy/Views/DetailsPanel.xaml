@@ -1,0 +1,201 @@
+<UserControl x:Class="GameBuddy.Views.DetailsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:GameBuddy.ViewModels"
+             xmlns:conv="clr-namespace:GameBuddy.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+             Background="{DynamicResource Theme.SurfaceBrush}">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="TrueVisible"/>
+        <conv:BoolToVisibilityConverter x:Key="TrueCollapsed" Invert="True"/>
+        <conv:NullToVisibilityConverter x:Key="HasValue"/>
+        <conv:NullToVisibilityConverter x:Key="HasNoValue" Invert="True"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- 空态 -->
+        <TextBlock Text="在左侧选择一个游戏查看详情"
+                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                   Foreground="{DynamicResource Theme.TextMutedBrush}"
+                   Visibility="{Binding SelectedGame, Converter={StaticResource HasNoValue}}"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding SelectedGame, Converter={StaticResource HasValue}}">
+            <StackPanel Margin="16" DataContext="{Binding SelectedGame}">
+
+                <!-- 海报 -->
+                <Border Height="240" CornerRadius="{DynamicResource Theme.PosterCornerRadius}"
+                        ClipToBounds="True" Margin="0,0,0,14">
+                    <Grid>
+                        <Border Background="{DynamicResource Theme.PlaceholderBrush}"/>
+                        <Image Source="{Binding PosterPath}" Stretch="UniformToFill"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Visibility="{Binding HasPoster, Converter={StaticResource TrueVisible}}"/>
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   TextAlignment="Center" TextWrapping="Wrap" Margin="20" FontSize="18"
+                                   FontWeight="Bold" Foreground="{DynamicResource Theme.TextMutedBrush}"
+                                   Visibility="{Binding HasPoster, Converter={StaticResource TrueCollapsed}}"/>
+                    </Grid>
+                </Border>
+
+                <!-- 标题 + 来源 -->
+                <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" TextWrapping="Wrap"/>
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
+                    <TextBlock Text="{Binding SourceEmoji}" Margin="0,0,6,0" FontSize="12"/>
+                    <TextBlock Text="{Binding SourceLabel}" FontSize="12"
+                               Foreground="{DynamicResource Theme.TextSecondaryBrush}"/>
+                    <TextBlock Text=" · " FontSize="12" Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                    <TextBlock Text="{Binding MetadataStatusText}" FontSize="12"
+                               Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                </StackPanel>
+
+                <!-- 操作按钮 -->
+                <WrapPanel Margin="0,0,0,14">
+                    <Button Content="▶ 启动" Margin="0,0,8,8" MinWidth="88"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                    <Button Content="⏹ 停止计时" Margin="0,0,8,8"
+                            Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"
+                            Visibility="{Binding IsPlaying, Converter={StaticResource TrueVisible}}"/>
+                    <Button Content="⭐ 收藏" Margin="0,0,8,8"
+                            Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                    <Button Content="📂 目录" Margin="0,0,8,8"
+                            Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                    <Button Content="🗑 移除" Margin="0,0,8,8"
+                            Command="{Binding DataContext.RemoveGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                </WrapPanel>
+
+                <!-- 统计 -->
+                <Border Style="{StaticResource PanelBorder}" Padding="12" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="累计时长" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding TotalPlayTimeText}" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="游玩次数" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding SessionCount}" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1">
+                            <TextBlock Text="上次游玩" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding LastPlayedText}" FontSize="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1">
+                            <TextBlock Text="安装体积" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding SizeText}" FontSize="13"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 分组 -->
+                <TextBlock Text="分组" Style="{StaticResource SectionTitle}"/>
+                <ItemsControl ItemsSource="{Binding DataContext.SelectedGameGroups, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              Margin="0,0,0,6">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding Group.Name}" IsChecked="{Binding IsMember, Mode=TwoWay}"
+                                      Margin="0,2"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Content="＋ 新建分组" HorizontalAlignment="Left" Margin="0,0,0,14"
+                        Command="{Binding DataContext.AddGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+                <!-- 标签 -->
+                <TextBlock Text="标签" Style="{StaticResource SectionTitle}"/>
+                <ItemsControl ItemsSource="{Binding Game.Tags}" Margin="0,0,0,6">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource TagChip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding}" FontSize="12"
+                                               Foreground="{DynamicResource Theme.TextPrimaryBrush}"/>
+                                    <Button Content="✕" FontSize="10" Padding="4,0" Margin="4,0,0,0"
+                                            Style="{StaticResource GhostButton}"
+                                            Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TagInput" ToolTip="输入标签后回车或点添加"/>
+                    <Button Grid.Column="1" Content="添加" Margin="8,0,0,0"
+                            Command="{Binding DataContext.AddTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding Text, ElementName=TagInput}"/>
+                </Grid>
+
+                <!-- 元数据 -->
+                <TextBlock Text="元数据（Steam）" Style="{StaticResource SectionTitle}"/>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding MetadataAppIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Steam AppId，留空则按名称自动搜索"/>
+                    <Button Grid.Column="1" Content="重新抓取" Margin="8,0,0,0"
+                            Command="{Binding DataContext.RefreshSelectedMetadataCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                </Grid>
+                <WrapPanel Margin="0,0,0,14">
+                    <Button Content="🛒 Steam 商店" Margin="0,0,8,8"
+                            Command="{Binding DataContext.OpenStoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                    <Button Content="🔍 SteamDB" Margin="0,0,8,8"
+                            Command="{Binding DataContext.OpenSteamDbCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"/>
+                </WrapPanel>
+
+                <!-- 简介 -->
+                <TextBlock Text="简介" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="{Binding Game.ShortDescription}" TextWrapping="Wrap" FontSize="12.5"
+                           Foreground="{DynamicResource Theme.TextSecondaryBrush}" Margin="0,0,0,10"
+                           Visibility="{Binding Game.ShortDescription, Converter={StaticResource HasValue}}"/>
+                <TextBlock Text="{Binding Game.Description}" TextWrapping="Wrap" FontSize="12"
+                           Foreground="{DynamicResource Theme.TextMutedBrush}" MaxHeight="320"
+                           Visibility="{Binding Game.Description, Converter={StaticResource HasValue}}"/>
+
+                <StackPanel Margin="0,14,0,0">
+                    <TextBlock Style="{StaticResource MutedText}">
+                        <Run Text="开发："/><Run Text="{Binding Game.Developers, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MutedText}">
+                        <Run Text="发行："/><Run Text="{Binding Game.Publishers, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MutedText}">
+                        <Run Text="发行日期："/><Run Text="{Binding Game.ReleaseDate, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap">
+                        <Run Text="路径："/><Run Text="{Binding InstallPathText, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

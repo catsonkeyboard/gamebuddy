@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>GameBuddy</RootNamespace>
+    <AssemblyName>GameBuddy</AssemblyName>
+    <!-- <ApplicationIcon>Assets\app.ico</ApplicationIcon> -->
+    <Product>GameBuddy</Product>
+    <Version>0.1.0</Version>
+    <NoWarn>$(NoWarn);CS8618;MVVMTK0034</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- 主题 / 样式 XAML 由 WPF 默认 Page glob 自动编译，无需显式声明 -->
+
+</Project>

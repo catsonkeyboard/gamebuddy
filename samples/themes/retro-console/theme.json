@@ -1,0 +1,8 @@
+{
+  "id": "retro-console",
+  "name": "复古终端（示例插件）",
+  "description": "外部主题插件示例：黑底绿字 CRT 风",
+  "author": "GameBuddy 示例",
+  "xamlFile": "Theme.xaml",
+  "previewColorHex": "#33FF66"
+}

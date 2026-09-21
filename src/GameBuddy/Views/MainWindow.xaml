@@ -1,0 +1,273 @@
+<Window x:Class="GameBuddy.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:vm="clr-namespace:GameBuddy.ViewModels"
+        xmlns:views="clr-namespace:GameBuddy.Views"
+        xmlns:models="clr-namespace:GameBuddy.Models"
+        xmlns:conv="clr-namespace:GameBuddy.Converters"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        Title="GameBuddy — 单机游戏库"
+        Width="1280" Height="800" MinWidth="900" MinHeight="560"
+        WindowStyle="None" ResizeMode="CanResize" AllowsTransparency="False"
+        Background="{DynamicResource Theme.WindowBackgroundBrush}"
+        FontFamily="{DynamicResource Theme.BaseFontFamily}">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="TrueVisible"/>
+        <conv:BoolToVisibilityConverter x:Key="TrueCollapsed" Invert="True"/>
+        <conv:NullToVisibilityConverter x:Key="HasValue"/>
+        <conv:NullToVisibilityConverter x:Key="HasNoValue" Invert="True"/>
+
+        <Style x:Key="GameCardItem" TargetType="ListBoxItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Background="Transparent" SnapsToDevicePixels="True">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <EventSetter Event="MouseDoubleClick" Handler="OnGameDoubleClick"/>
+        </Style>
+    </Window.Resources>
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="36" ResizeBorderThickness="6" GlassFrameThickness="0"
+                            CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <!-- ============ 标题栏 ============ -->
+        <Border Grid.Row="0" Background="{DynamicResource Theme.TopBarBrush}"
+                BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="🎮 GameBuddy" VerticalAlignment="Center" Margin="14,0,0,0"
+                           FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextPrimaryBrush}"/>
+
+                <!-- 搜索 -->
+                <Grid Grid.Column="1" Margin="16,0,16,0" MaxWidth="460" HorizontalAlignment="Left" Width="460">
+                    <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center" Padding="26,5,8,5"
+                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                             ToolTip="搜索游戏名 / 标签 / 类型（Ctrl+F 聚焦）"/>
+                    <TextBlock Text="🔍" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="12"
+                               Foreground="{DynamicResource Theme.TextMutedBrush}" IsHitTestVisible="False"/>
+                </Grid>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="⚙" Style="{StaticResource WindowControlButton}" ToolTip="设置"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                            Command="{Binding OpenSettingsCommand}"/>
+                    <Button Content="—" Style="{StaticResource WindowControlButton}"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True" Click="OnMinimize"/>
+                    <Button Content="□" Style="{StaticResource WindowControlButton}"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True" Click="OnMaximize"/>
+                    <Button Content="✕" shell:WindowChrome.IsHitTestVisibleInChrome="True" Click="OnClose">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Theme.DangerBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============ 主体 ============ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 侧边栏 -->
+            <Border Grid.Column="0" Background="{DynamicResource Theme.SidebarBrush}"
+                    BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Margin="0,10">
+                        <StackPanel>
+                            <TextBlock Text="库" Style="{StaticResource SectionTitle}" Margin="16,0,0,6"/>
+                            <ListBox ItemsSource="{Binding Filters}"
+                                     SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
+                                     ItemContainerStyle="{StaticResource SidebarItem}"
+                                     Style="{StaticResource SidebarList}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:FilterItem}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Emoji}" Margin="0,0,8,0" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Count}" FontSize="11"
+                                                       Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <TextBlock Text="主题" Style="{StaticResource SectionTitle}" Margin="16,16,0,6"/>
+                            <ItemsControl ItemsSource="{Binding Themes}" Margin="12,0,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:ThemeDescriptor}">
+                                        <Button Width="34" Height="34" Margin="0,0,6,6" Padding="0"
+                                                ToolTip="{Binding Name}"
+                                                Command="{Binding DataContext.ApplyThemeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}">
+                                            <Border Width="20" Height="20" CornerRadius="10">
+                                                <Border.Background>
+                                                    <SolidColorBrush Color="{Binding PreviewColorHex}"/>
+                                                </Border.Background>
+                                            </Border>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="1" Margin="10,0,10,12">
+                        <Button Content="＋ 手动添加游戏" HorizontalContentAlignment="Left" Margin="0,0,0,6"
+                                Command="{Binding AddManualGameCommand}"/>
+                        <Button Content="🔄 扫描本机游戏" HorizontalContentAlignment="Left" Margin="0,0,0,6"
+                                Command="{Binding ScanCommand}"/>
+                        <Button Content="⚙ 设置" HorizontalContentAlignment="Left"
+                                Command="{Binding OpenSettingsCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 游戏库 -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Padding="16,12" BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Center">
+                            <Run Text="{Binding SelectedFilter.Name, Mode=OneWay}" FontWeight="SemiBold" FontSize="15"/>
+                            <Run Text="  " />
+                            <Run Text="{Binding GamesView.Count, Mode=OneWay}" Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                            <Run Text=" 个游戏" Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                        </TextBlock>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding Source={x:Static vm:SortModes.All}}"
+                                      SelectedItem="{Binding SortMode, Mode=TwoWay}"
+                                      Width="110" ToolTip="排序方式"/>
+                            <Button Content="详情" Margin="8,0,0,0" Command="{Binding ToggleDetailsCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding GamesView}"
+                         SelectedItem="{Binding SelectedGame, Mode=TwoWay}"
+                         ItemContainerStyle="{StaticResource GameCardItem}"
+                         ItemTemplate="{StaticResource GameCardTemplate}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Visibility="{Binding GamesView.IsEmpty, Converter={StaticResource TrueVisible}}">
+                    <TextBlock Text="🕹" FontSize="42" HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                    <TextBlock Text="还没有游戏" HorizontalAlignment="Center" FontSize="16"
+                               Foreground="{DynamicResource Theme.TextSecondaryBrush}"/>
+                    <TextBlock Text="点击左侧「扫描本机游戏」自动发现 Steam / Epic / 本地目录里的游戏"
+                               HorizontalAlignment="Center" Margin="0,6,0,14"
+                               Foreground="{DynamicResource Theme.TextMutedBrush}"/>
+                    <Button Content="🔄 立即扫描" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center"
+                            Command="{Binding ScanCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- 详情面板 -->
+            <Border Grid.Column="2" Width="340"
+                    BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="1,0,0,0"
+                    Visibility="{Binding IsDetailsOpen, Converter={StaticResource TrueVisible}}">
+                <views:DetailsPanel/>
+            </Border>
+        </Grid>
+
+        <!-- ============ 状态栏 ============ -->
+        <Border Grid.Row="2" Background="{DynamicResource Theme.TopBarBrush}"
+                BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="200"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" FontSize="12"
+                           Foreground="{DynamicResource Theme.TextSecondaryBrush}"/>
+                <ProgressBar Grid.Column="1" VerticalAlignment="Center" Height="4"
+                             IsIndeterminate="{Binding IsIndeterminate}"
+                             Value="{Binding ProgressValue}"
+                             Visibility="{Binding IsBusy, Converter={StaticResource TrueVisible}}"/>
+            </Grid>
+        </Border>
+
+        <!-- ============ 设置浮层 ============ -->
+        <Grid Grid.Row="1" Background="{DynamicResource Theme.WindowBackgroundBrush}"
+              Visibility="{Binding IsSettingsOpen, Converter={StaticResource TrueVisible}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Border Background="{DynamicResource Theme.TopBarBrush}"
+                    BorderBrush="{DynamicResource Theme.DividerBrush}" BorderThickness="0,0,0,1" Padding="16,10">
+                <Grid>
+                    <TextBlock Text="设置" Style="{StaticResource TitleText}" VerticalAlignment="Center"/>
+                    <Button Content="✕ 关闭" HorizontalAlignment="Right" Command="{Binding CloseSettingsCommand}"/>
+                </Grid>
+            </Border>
+            <views:SettingsPanel Grid.Row="1"/>
+        </Grid>
+    </Grid>
+</Window>

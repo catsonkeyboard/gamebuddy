@@ -1,0 +1,47 @@
+<!--
+  外部主题插件示例：复制到 %LOCALAPPDATA%\GameBuddy\Themes\retro-console\ 后，
+  在设置里点「重新加载主题」即可出现。
+  注意：插件 XAML 是运行时加载的松散 XAML，不要写 x:Class，也不要引用程序集里的样式。
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Theme.WindowBackgroundBrush" Color="#FF04140A"/>
+    <SolidColorBrush x:Key="Theme.SidebarBrush" Color="#FF071C0F"/>
+    <SolidColorBrush x:Key="Theme.TopBarBrush" Color="#FF0A2413"/>
+    <SolidColorBrush x:Key="Theme.SurfaceBrush" Color="#FF08200F"/>
+    <SolidColorBrush x:Key="Theme.CardBrush" Color="#FF0B2B15"/>
+    <SolidColorBrush x:Key="Theme.CardHoverBrush" Color="#FF124A24"/>
+    <SolidColorBrush x:Key="Theme.BorderBrush" Color="#FF1E7A3C"/>
+    <SolidColorBrush x:Key="Theme.DividerBrush" Color="#FF134D26"/>
+    <SolidColorBrush x:Key="Theme.SelectionBrush" Color="#FF175E2E"/>
+
+    <SolidColorBrush x:Key="Theme.AccentBrush" Color="#FF33FF66"/>
+    <SolidColorBrush x:Key="Theme.AccentHoverBrush" Color="#FF7CFFA0"/>
+    <SolidColorBrush x:Key="Theme.AccentTextBrush" Color="#FF04140A"/>
+
+    <SolidColorBrush x:Key="Theme.TextPrimaryBrush" Color="#FFB6FFCC"/>
+    <SolidColorBrush x:Key="Theme.TextSecondaryBrush" Color="#FF7BD998"/>
+    <SolidColorBrush x:Key="Theme.TextMutedBrush" Color="#FF4E9B68"/>
+
+    <SolidColorBrush x:Key="Theme.SuccessBrush" Color="#FF33FF66"/>
+    <SolidColorBrush x:Key="Theme.WarningBrush" Color="#FFFFD34E"/>
+    <SolidColorBrush x:Key="Theme.DangerBrush" Color="#FFFF5A5A"/>
+    <SolidColorBrush x:Key="Theme.GlowBrush" Color="#3333FF66"/>
+    <SolidColorBrush x:Key="Theme.PlaceholderBrush" Color="#FF0D3A1C"/>
+
+    <CornerRadius x:Key="Theme.CardCornerRadius">4</CornerRadius>
+    <CornerRadius x:Key="Theme.ButtonCornerRadius">3</CornerRadius>
+    <CornerRadius x:Key="Theme.PosterCornerRadius">3</CornerRadius>
+    <CornerRadius x:Key="Theme.ControlCornerRadius">3</CornerRadius>
+
+    <FontFamily x:Key="Theme.BaseFontFamily">Cascadia Mono, Consolas, Microsoft YaHei UI</FontFamily>
+    <FontFamily x:Key="Theme.TitleFontFamily">Cascadia Mono, Consolas, Microsoft YaHei UI</FontFamily>
+
+    <Thickness x:Key="Theme.CardBorderThickness">1</Thickness>
+    <Thickness x:Key="Theme.CardPadding">10</Thickness>
+
+    <DropShadowEffect x:Key="Theme.CardEffect" BlurRadius="10" ShadowDepth="0" Opacity="0.6" Color="#FF33FF66"/>
+    <DropShadowEffect x:Key="Theme.PanelEffect" BlurRadius="18" ShadowDepth="0" Opacity="0.5" Color="#FF33FF66"/>
+
+</ResourceDictionary>
