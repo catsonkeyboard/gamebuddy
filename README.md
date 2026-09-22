@@ -7,7 +7,13 @@
 
 ---
 
-## 1. 快速开始
+## 1. 界面预览
+
+![GameBuddy 主页游戏库（暗黑主题）](screenshots/screenshot.png)
+
+主页库：左侧按分组 / 来源筛选（带计数），中间是竖版海报墙（悬停出现启动按钮），右侧是选中游戏的详情、游玩统计与元数据编辑。
+
+## 2. 快速开始
 
 ```bash
 # 构建整个解决方案（slnx 在仓库根，无需 cd）
@@ -22,7 +28,7 @@ dotnet test
 
 首次启动会自动扫描本机游戏，并从 Steam 商店接口补齐海报与简介（需要联网，国内网络若访问 Steam 较慢可在设置里关闭自动抓取）。
 
-## 2. MVP 已实现的能力
+## 3. MVP 已实现的能力
 
 | 模块 | 现状 |
 | --- | --- |
@@ -39,13 +45,15 @@ dotnet test
 | 主题 | 内置 4 套（暗黑默认 / 像素 / 赛博朋克 / 可爱卡通）+ 外部主题插件目录热加载，运行时切换无需重启 |
 | 持久化 | `%LOCALAPPDATA%\GameBuddy\library.json`（库/分组/会话/设置），海报缓存到 `cache\posters` |
 
-## 3. 目录结构
+## 4. 目录结构
 
 ```
 gamebuddy/
 ├── GameBuddy.slnx                  解决方案（放仓库根，根目录可直接 dotnet build / dotnet test）
 ├── README.md                       设计说明 + 上手
 ├── .gitignore
+├── screenshots/
+│   └── screenshot.png              README 里引用的界面预览图（主页库 + 详情面板）
 ├── samples/
 │   └── themes/retro-console/       外部主题插件示例（theme.json + Theme.xaml）
 ├── src/
@@ -83,7 +91,7 @@ gamebuddy/
 - `VdfParserTests` —— 锁住"根对象名必须保留（`AppState` / `libraryfolders`）"这条回归（早期实现把根键吞掉，导致 Steam 扫描恒返回 0），另外覆盖键大小写不敏感、注释与嵌套对象。
 - `ScannerTests` —— 用临时目录搭一个假 Steam 库：验证跨库扫描、运行库/Proton/残留清单被剔除、`steam://rungameid/` 与安装路径正确；`FolderScanner` 验证主程序挑选与安装器黑名单。
 
-## 4. 关键设计说明
+## 5. 关键设计说明
 
 **MVVM 与数据流**：View 只做绑定，业务逻辑全在 Service / ViewModel；`MainViewModel` 持有 `Games`（`ObservableCollection<GameItemViewModel>`）并对外暴露 `ICollectionView`，筛选、排序都由 `CollectionView` 的 `Filter` / `SortDescriptions` 完成，避免反复重建集合。
 
@@ -120,7 +128,7 @@ gamebuddy/
 | 形状字体 | `Theme.CardCornerRadius`、`Theme.ButtonCornerRadius`、`Theme.PosterCornerRadius`、`Theme.ControlCornerRadius`、`Theme.BaseFontFamily`、`Theme.TitleFontFamily` |
 | 其他 | `Theme.CardPadding`（Thickness）、`Theme.CardEffect`、`Theme.PanelEffect`（DropShadowEffect） |
 
-## 5. 已知限制（MVP 范围内有意保留）
+## 6. 已知限制（MVP 范围内有意保留）
 
 - 海报墙用 `WrapPanel`，**未做 UI 虚拟化**；几十款游戏没问题，上千款需要换成虚拟化面板。
 - 只实现了 Steam 单一元数据源；IGDB / SteamGridDB 等多源与"选封面"未做。
@@ -129,7 +137,7 @@ gamebuddy/
 - 单元测试目前只覆盖**扫描与解析层**（`tests/GameBuddy.Tests`）；ViewModel（依赖 WPF 的 `ICollectionView`/`Dispatcher`）与主题切换还没有测试。
 - 解决方案用的是 .NET 10 默认的 `.slnx` 格式，老版本 Visual Studio 可能只认 `.sln`。
 
-## 6. 下一步路线（建议顺序）
+## 7. 下一步路线（建议顺序）
 
 1. **P1**：虚拟化列表 + 增量扫描 + 海报懒加载；补 ViewModel / 主题切换层测试。
 2. **P1**：启动器自启动/最小化到托盘、游戏中浮窗（显示本次时长）。
