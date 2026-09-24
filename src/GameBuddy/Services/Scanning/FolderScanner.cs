@@ -14,7 +14,12 @@ public sealed class FolderScanner : IGameScanner
         "uninstall", "unins000", "setup", "install", "crash", "report", "redist", "vcredist",
         "dxwebsetup", "dotnet", "oalinst", "physx", "ue4prereq", "ueprereq", "prereq",
         "activation", "launcherinstaller", "dxsetup", "vcruntime", "easyanticheat", "battleye",
-        "unitycrashhandler", "crashhandler", "eac", "be_service", "steam_api", "steamclient"
+        "unitycrashhandler", "crashhandler", "eac", "be_service", "steam_api", "steamclient",
+
+        // 常随游戏一起分发、但显然不是游戏的运行时 / 工具程序
+        "createdump", "conhost", "python", "pythonw", "7z", "webhelper",
+        "gameoverlayui", "streaming_client", "steamerrorreporter",
+        "crashpad", "nvsphelper", "rtss", "reshade", "specialk", "dxgi"
     };
 
     private const int MaxDepth = 3;
@@ -30,12 +35,22 @@ public sealed class FolderScanner : IGameScanner
             ct.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder)) continue;
 
-            // 1) 直接位于根目录的 exe
-            foreach (var exe in SafeEnumerateFiles(folder, "*.exe", SearchOption.TopDirectoryOnly))
+            // 1) 监控目录本身可能就是一个游戏目录（例如直接把 steamapps\common\Stardew Valley 加进来）。
+            //    这种时候整目录只算一个游戏，否则目录里每个 dll 工具 exe（createdump 之类）都会变成一条游戏。
+            var selfNamed = FindSelfNamedExecutable(folder);
+            if (selfNamed is not null)
             {
-                ct.ThrowIfCancellationRequested();
-                if (IsBlocked(exe) || !LooksLikeGameExe(exe)) continue;
-                results.Add(Create(folder, exe));
+                results.Add(Create(folder, selfNamed));
+            }
+            else
+            {
+                // 没有与目录同名的主程序，就按"散装 exe"处理：根目录下每个 exe 各自算一个
+                foreach (var exe in SafeEnumerateFiles(folder, "*.exe", SearchOption.TopDirectoryOnly))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (IsBlocked(exe) || !LooksLikeGameExe(exe)) continue;
+                    results.Add(Create(folder, exe));
+                }
             }
 
             // 2) 每个子目录视作一个游戏，选一个最佳主程序
@@ -69,6 +84,18 @@ public sealed class FolderScanner : IGameScanner
             InstallDirectory = gameDir,
             ExecutablePath = exePath
         };
+    }
+
+    /// <summary>找出与目录同名的主程序——命中就说明"这个目录本身是一个游戏"，而不是一堆散装 exe。</summary>
+    private static string? FindSelfNamedExecutable(string dir)
+    {
+        var dirName = new DirectoryInfo(dir).Name.ToLowerInvariant();
+        if (dirName.Length == 0) return null;
+
+        return SafeEnumerateFiles(dir, "*.exe", SearchOption.TopDirectoryOnly)
+            .FirstOrDefault(p => !IsBlocked(p)
+                                 && LooksLikeGameExe(p)
+                                 && Path.GetFileNameWithoutExtension(p).ToLowerInvariant() == dirName);
     }
 
     private static string? FindBestExecutable(string dir, int depth)

@@ -95,6 +95,7 @@ public sealed class GameItemViewModel : ObservableObject
 
     public string SourceLabel => MainViewModel.SourceLabel(Game.Source);
     public string SourceEmoji => MainViewModel.SourceEmoji(Game.Source);
+    public bool IsUninstalled => Game.IsUninstalled;
     public DateTime AddedAt => Game.AddedAt;
     public DateTime LastPlayedSortKey => Game.LastPlayedAt ?? DateTime.MinValue;
     public string LastPlayedText => Game.LastPlayedAt is { } d ? d.ToString("yyyy-MM-dd HH:mm") : "从未游玩";
@@ -157,6 +158,7 @@ public sealed class GameItemViewModel : ObservableObject
     public void RaiseFlagsChanged()
     {
         OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(IsUninstalled));
         OnPropertyChanged(nameof(Game));
     }
 

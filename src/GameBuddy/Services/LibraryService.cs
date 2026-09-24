@@ -9,12 +9,18 @@ namespace GameBuddy.Services;
 
 public sealed record ProgressReport(string Message, double? Value = null, bool IsIndeterminate = true);
 
+/// <summary>一次扫描的结果统计。</summary>
+public sealed record ScanSummary(int Added, int Merged, int Uninstalled)
+{
+    public string ToStatusText() => $"扫描完成：新增 {Added}、合并重复 {Merged}、标记已卸载 {Uninstalled}";
+}
+
 /// <summary>
-/// 库的业务门面：扫描 → 合并 → 元数据抓取 → 持久化。
+/// 库的业务门面：扫描 → 合并 → 去重 → 卸载标记 → 元数据抓取 → 持久化。
 /// </summary>
 public interface ILibraryService
 {
-    Task<int> ScanAsync(IProgress<ProgressReport>? progress = null, CancellationToken ct = default);
+    Task<ScanSummary> ScanAsync(IProgress<ProgressReport>? progress = null, CancellationToken ct = default);
 
     Task RefreshMetadataAsync(bool force, IProgress<ProgressReport>? progress = null, CancellationToken ct = default);
 
@@ -50,7 +56,7 @@ public sealed class LibraryService : ILibraryService
         _images = images;
     }
 
-    public async Task<int> ScanAsync(IProgress<ProgressReport>? progress = null, CancellationToken ct = default)
+    public async Task<ScanSummary> ScanAsync(IProgress<ProgressReport>? progress = null, CancellationToken ct = default)
     {
         var options = new ScanOptions
         {
@@ -75,11 +81,15 @@ public sealed class LibraryService : ILibraryService
             }
         }
 
-        var added = 0;
         var data = _repository.Data;
+        var ignoredKeys = new HashSet<string>(_repository.Settings.IgnoredExternalIds, StringComparer.OrdinalIgnoreCase);
 
+        var added = 0;
         foreach (var scanned in discovered)
         {
+            // 被用户移除过、或已被合并掉的条目，不再重新入库
+            if (ignoredKeys.Contains(GameDeduplicator.IgnoreKey(scanned.Source, scanned.ExternalId))) continue;
+
             var existing = data.Games.FirstOrDefault(g =>
                 g.Source == scanned.Source &&
                 string.Equals(g.ExternalId, scanned.ExternalId, StringComparison.OrdinalIgnoreCase));
@@ -111,8 +121,65 @@ public sealed class LibraryService : ILibraryService
             }
         }
 
+        // 安装位置失效的条目打标记（不删除，用户数据保留）
+        var uninstalled = 0;
+        foreach (var game in data.Games)
+        {
+            game.IsUninstalled = GameDeduplicator.IsMissingInstall(game);
+            if (game.IsUninstalled) uninstalled++;
+        }
+
+        var merged = MergeDuplicates(data, progress);
+
         await _repository.SaveAsync().ConfigureAwait(false);
-        return added;
+        return new ScanSummary(added, merged, uninstalled);
+    }
+
+    /// <summary>
+    /// 合并被多个来源重复扫到的同一款游戏：保留信息更完整的那条，迁移游玩记录，
+    /// 并把被合并掉的条目键写入忽略列表，避免下次扫描又重建出来。
+    /// </summary>
+    private int MergeDuplicates(LibraryData data, IProgress<ProgressReport>? progress)
+    {
+        var merged = 0;
+
+        while (true)
+        {
+            var candidates = GameDeduplicator.FindDuplicates(data.Games);
+            if (candidates.Count == 0) break;
+
+            var before = merged;
+            foreach (var candidate in candidates)
+            {
+                if (!data.Games.Contains(candidate.Primary) || !data.Games.Contains(candidate.Secondary)) continue;
+
+                var primary = candidate.Primary;
+                var secondary = candidate.Secondary;
+
+                GameDeduplicator.MergeInto(primary, secondary);
+
+                foreach (var session in data.Sessions.Where(s => s.GameId == secondary.Id))
+                {
+                    session.GameId = primary.Id;
+                }
+
+                data.Games.Remove(secondary);
+
+                var key = GameDeduplicator.IgnoreKey(secondary.Source, secondary.ExternalId);
+                if (!_repository.Settings.IgnoredExternalIds.Contains(key))
+                {
+                    _repository.Settings.IgnoredExternalIds.Add(key);
+                }
+
+                merged++;
+                progress?.Report(new ProgressReport($"合并重复条目：{primary.DisplayTitle}"));
+                AppLog.Info($"合并 {secondary.Source}:{secondary.Name} → {primary.Source}:{primary.DisplayTitle}（{candidate.Reason}）");
+            }
+
+            if (merged == before) break;
+        }
+
+        return merged;
     }
 
     public async Task RefreshMetadataAsync(bool force, IProgress<ProgressReport>? progress = null, CancellationToken ct = default)
@@ -164,28 +231,28 @@ public sealed class LibraryService : ILibraryService
                 }
 
                 game.Name = string.IsNullOrWhiteSpace(game.DisplayName) ? meta.Name ?? game.Name : game.Name;
-            game.ShortDescription = meta.ShortDescription;
-            game.Description = meta.Description;
-            game.Developers = meta.Developers;
-            game.Publishers = meta.Publishers;
-            game.ReleaseDate = meta.ReleaseDate;
-            game.Genres = meta.Genres.ToList();
-            game.Website = meta.Website;
-            game.HeaderUrl = meta.HeaderUrl;
-            game.PosterUrl = meta.PosterUrl;
-            game.MetadataFetchedAt = DateTime.Now;
+                game.ShortDescription = meta.ShortDescription;
+                game.Description = meta.Description;
+                game.Developers = meta.Developers;
+                game.Publishers = meta.Publishers;
+                game.ReleaseDate = meta.ReleaseDate;
+                game.Genres = meta.Genres.ToList();
+                game.Website = meta.Website;
+                game.HeaderUrl = meta.HeaderUrl;
+                game.PosterUrl = meta.PosterUrl;
+                game.MetadataFetchedAt = DateTime.Now;
 
-            foreach (var candidate in new[] { meta.PosterUrl, meta.HeaderUrl })
-            {
-                if (string.IsNullOrWhiteSpace(candidate)) continue;
-                var local = await _images.GetOrDownloadAsync(candidate!, ct).ConfigureAwait(false);
-                if (local is not null)
+                foreach (var candidate in new[] { meta.PosterUrl, meta.HeaderUrl })
                 {
-                    game.PosterPath = local;
-                    game.MetadataStatus = MetadataStatus.Ok;
-                    return 0;
+                    if (string.IsNullOrWhiteSpace(candidate)) continue;
+                    var local = await _images.GetOrDownloadAsync(candidate!, ct).ConfigureAwait(false);
+                    if (local is not null)
+                    {
+                        game.PosterPath = local;
+                        game.MetadataStatus = MetadataStatus.Ok;
+                        return 0;
+                    }
                 }
-            }
 
                 game.MetadataStatus = MetadataStatus.Failed;
                 return 1;
@@ -221,7 +288,20 @@ public sealed class LibraryService : ILibraryService
         return game;
     }
 
-    public void RemoveGame(Game game) => _repository.Data.Games.Remove(game);
+    /// <summary>从库中移除，并记入忽略列表——否则下次扫描会把它重新加回来。</summary>
+    public void RemoveGame(Game game)
+    {
+        if (!string.IsNullOrWhiteSpace(game.ExternalId))
+        {
+            var key = GameDeduplicator.IgnoreKey(game.Source, game.ExternalId);
+            if (!_repository.Settings.IgnoredExternalIds.Contains(key))
+            {
+                _repository.Settings.IgnoredExternalIds.Add(key);
+            }
+        }
+
+        _repository.Data.Games.Remove(game);
+    }
 
     public TimeSpan GetTotalPlayTime(string gameId) => TimeSpan.FromTicks(
         _repository.Data.Sessions

@@ -39,6 +39,16 @@ public sealed class LibrarySettings
     public string ThemeId { get; set; } = "dark";
     public bool AutoFetchMetadata { get; set; } = true;
     public bool ShowHiddenGames { get; set; }
+
+    /// <summary>在库中显示已卸载（安装位置失效）的游戏。</summary>
+    public bool ShowUninstalledGames { get; set; } = true;
+
+    /// <summary>
+    /// 不再纳入扫描的条目键（格式 "Source:ExternalId"）。
+    /// 用于两件事：① 用户手动移除后下次扫描不再"复活"；② 跨源合并后，被合并掉的那条不再重建。
+    /// </summary>
+    public List<string> IgnoredExternalIds { get; set; } = new();
+
     public double PosterWidth { get; set; } = 190;
 }
 

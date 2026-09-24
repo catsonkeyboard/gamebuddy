@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using GameBuddy.Models;
 using GameBuddy.Services;
 using GameBuddy.Services.Diagnostics;
+using GameBuddy.Services.Scanning;
 using GameBuddy.Services.Storage;
 using GameBuddy.Services.Theming;
 using Microsoft.Win32;
@@ -28,6 +29,7 @@ public enum FilterKind
 {
     All,
     Favorite,
+    Uninstalled,
     Group,
     Source
 }
@@ -74,6 +76,10 @@ public partial class MainViewModel : ObservableObject
 
     public LibrarySettings Settings => _repository.Settings;
     public IReadOnlyList<ThemeDescriptor> Themes => _themes.Themes;
+
+    /// <summary>忽略列表里已积累的条目数（被合并掉的重复项 + 手动移除过的项）。</summary>
+    public string IgnoredCountText =>
+        $"忽略列表：{_repository.Settings.IgnoredExternalIds.Count} 项";
 
     [ObservableProperty] private GameItemViewModel? _selectedGame;
     [ObservableProperty] private FilterItem? _selectedFilter;
@@ -171,6 +177,7 @@ public partial class MainViewModel : ObservableObject
 
         Filters.Add(new FilterItem { Id = "__all__", Name = "全部游戏", Emoji = "🗂", Kind = FilterKind.All });
         Filters.Add(new FilterItem { Id = "__fav__", Name = "我的收藏", Emoji = "⭐", Kind = FilterKind.Favorite });
+        Filters.Add(new FilterItem { Id = "__uninstalled__", Name = "已卸载", Emoji = "📦", Kind = FilterKind.Uninstalled });
 
         foreach (var group in _repository.Data.Groups.OrderBy(g => g.SortOrder).ThenBy(g => g.Name))
         {
@@ -229,6 +236,7 @@ public partial class MainViewModel : ObservableObject
     {
         FilterKind.All => true,
         FilterKind.Favorite => item.Game.IsFavorite,
+        FilterKind.Uninstalled => item.Game.IsUninstalled,
         FilterKind.Group => item.Game.GroupIds.Contains(filter.Id),
         FilterKind.Source => item.Game.Source == filter.Source,
         _ => true
@@ -238,6 +246,13 @@ public partial class MainViewModel : ObservableObject
     {
         if (obj is not GameItemViewModel item) return false;
         if (item.Game.IsHidden && !Settings.ShowHiddenGames) return false;
+        // 已卸载的条目默认不混在主列表里，但"已卸载"筛选器本身要能看它们
+        if (item.Game.IsUninstalled && !Settings.ShowUninstalledGames &&
+            SelectedFilter?.Kind != FilterKind.Uninstalled)
+        {
+            return false;
+        }
+
         if (SelectedFilter is { } filter && !InFilter(item, filter)) return false;
 
         if (!string.IsNullOrWhiteSpace(SearchText))
@@ -345,11 +360,12 @@ public partial class MainViewModel : ObservableObject
     {
         await RunBusyAsync("扫描中", async (progress, ct) =>
         {
-            var added = await _library.ScanAsync(progress, ct);
-            StatusText = $"扫描完成，新增 {added} 个游戏";
+            var summary = await _library.ScanAsync(progress, ct);
+            StatusText = summary.ToStatusText();
 
             await OnUiAsync(() =>
             {
+                OnPropertyChanged(nameof(IgnoredCountText));
                 RebuildGames();
                 RebuildFilters();
             });
@@ -366,6 +382,26 @@ public partial class MainViewModel : ObservableObject
             }
 
             await _repository.SaveAsync();
+        });
+    }
+
+    /// <summary>
+    /// 清空忽略列表。重装了之前被移除/被合并掉的游戏时用它，再扫描一次就能找回来。
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task ResetIgnoredGamesAsync()
+    {
+        await RunBusyAsync("重置忽略列表", async (_, _) =>
+        {
+            var count = _repository.Settings.IgnoredExternalIds.Count;
+            _repository.Settings.IgnoredExternalIds.Clear();
+            await _repository.SaveAsync();
+
+            await OnUiAsync(() =>
+            {
+                OnPropertyChanged(nameof(IgnoredCountText));
+                StatusText = count == 0 ? "忽略列表本来就是空的" : $"已清空 {count} 项忽略记录，重新扫描即可找回";
+            });
         });
     }
 
@@ -419,6 +455,17 @@ public partial class MainViewModel : ObservableObject
         if (_tracker.IsPlaying(item.Id))
         {
             StatusText = $"{item.Title} 正在游玩中";
+            return;
+        }
+
+        // 卸载标记可能已过期（用户重装了但还没重新扫描），以磁盘实际情况为准
+        item.Game.IsUninstalled = GameDeduplicator.IsMissingInstall(item.Game);
+        item.RaiseFlagsChanged();
+
+        // 有 Steam/Epic 启动协议的交给平台自己处理，只有纯本地 exe 缺失时才拦下来
+        if (item.Game.IsUninstalled && string.IsNullOrWhiteSpace(item.Game.LaunchUri))
+        {
+            StatusText = $"无法启动：{item.Title} 已卸载，安装文件不在原位";
             return;
         }
 

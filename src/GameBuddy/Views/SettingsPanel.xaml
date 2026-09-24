@@ -75,7 +75,9 @@
                     <CheckBox Content="扫描后自动抓取海报与简介（Steam Store API）"
                               IsChecked="{Binding Settings.AutoFetchMetadata, Mode=TwoWay}" Margin="0,0,0,8"/>
                     <CheckBox Content="在库中显示已隐藏的游戏"
-                              IsChecked="{Binding Settings.ShowHiddenGames, Mode=TwoWay}" Margin="0,0,0,12"/>
+                              IsChecked="{Binding Settings.ShowHiddenGames, Mode=TwoWay}" Margin="0,0,0,6"/>
+                    <CheckBox Content="在库中显示已卸载的游戏（灰显并标注）"
+                              IsChecked="{Binding Settings.ShowUninstalledGames, Mode=TwoWay}" Margin="0,0,0,12"/>
                     <WrapPanel>
                         <Button Content="🔄 补齐缺失元数据" Margin="0,0,8,0" Command="{Binding RefreshMetadataCommand}"/>
                         <Button Content="♻ 全部强制刷新" Command="{Binding ForceRefreshMetadataCommand}"/>
@@ -110,6 +112,20 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <Button Content="＋ 新建分组" HorizontalAlignment="Left" Command="{Binding AddGroupCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 库维护 -->
+            <Border Style="{StaticResource PanelBorder}" Padding="16" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="库维护" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="{Binding IgnoredCountText}" Style="{StaticResource MutedText}" Margin="0,0,0,8"/>
+                    <WrapPanel>
+                        <Button Content="♻ 重置忽略列表" Margin="0,0,8,0" Command="{Binding ResetIgnoredGamesCommand}"/>
+                        <Button Content="🔄 立即扫描" Command="{Binding ScanCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="被合并掉的重复条目、以及你手动移除过的条目都会记进忽略列表，下次扫描不会再出现。重新安装游戏后，先点“重置忽略列表”再扫描一次即可找回。"
+                               Style="{StaticResource MutedText}" Margin="0,10,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
 

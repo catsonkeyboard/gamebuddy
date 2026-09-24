@@ -68,6 +68,11 @@ public sealed class Game
     public bool IsHidden { get; set; }
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// 安装位置已失效（目录或主程序被删除）。条目仍保留在库中，用户数据不丢，只是不再可启动。
+    /// </summary>
+    public bool IsUninstalled { get; set; }
+
     // ---- 统计 ----
     public DateTime AddedAt { get; set; } = DateTime.Now;
     public DateTime? LastPlayedAt { get; set; }

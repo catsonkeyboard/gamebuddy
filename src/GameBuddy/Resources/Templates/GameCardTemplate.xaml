@@ -57,6 +57,16 @@
                                        Foreground="{DynamicResource Theme.WindowBackgroundBrush}"/>
                         </Border>
 
+                        <!-- 已卸载角标 -->
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="6"
+                                Background="{DynamicResource Theme.DangerBrush}"
+                                CornerRadius="{DynamicResource Theme.ControlCornerRadius}"
+                                Padding="7,3"
+                                Visibility="{Binding IsUninstalled, Converter={StaticResource TrueVisible}}">
+                            <TextBlock Text="已卸载" FontSize="11" FontWeight="Bold"
+                                       Foreground="{DynamicResource Theme.WindowBackgroundBrush}"/>
+                        </Border>
+
                         <!-- 悬停出现的启动按钮 -->
                         <Button x:Name="PlayButton"
                                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
@@ -95,6 +105,9 @@
         </Border>
 
         <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsUninstalled}" Value="True">
+                <Setter TargetName="CardRoot" Property="Opacity" Value="0.55"/>
+            </DataTrigger>
             <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
                 <Setter TargetName="PlayButton" Property="Opacity" Value="1"/>
                 <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource Theme.CardHoverBrush}"/>
